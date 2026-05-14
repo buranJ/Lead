@@ -1,5 +1,3 @@
-const STORAGE_KEY = "lead-crm-mvp-leads";
-
 const statuses = [
   ["new", "Новый"],
   ["need_check", "Проверить"],
@@ -14,230 +12,64 @@ const statuses = [
   ["do_not_contact", "Не писать"],
 ];
 
-const seedLeads = [
-  {
-    id: "seed-1",
-    source: "2gis",
-    companyName: "Smile Dent",
-    niche: "стоматология",
-    city: "Бишкек",
-    phone: "+996 555 120 404",
-    whatsapp: "https://wa.me/996555120404",
-    instagram: "@smiledent.kg",
-    website: "",
-    address: "ул. Киевская, 114",
-    rating: 4.7,
-    reviewsCount: 128,
-    status: "new",
-    priority: "high",
-    notes: "Хороший рейтинг, сайта не найдено. Можно предложить сайт с онлайн-записью.",
-    createdAt: "2026-05-10T10:00:00.000Z",
-    updatedAt: "2026-05-10T10:00:00.000Z",
-  },
-  {
-    id: "seed-2",
-    source: "2gis",
-    companyName: "Beauty Lab Bishkek",
-    niche: "салон красоты",
-    city: "Бишкек",
-    phone: "+996 700 300 210",
-    whatsapp: "https://wa.me/996700300210",
-    instagram: "@beautylab_bishkek",
-    website: "",
-    address: "пр. Чуй, 92",
-    rating: 4.8,
-    reviewsCount: 87,
-    status: "need_check",
-    priority: "high",
-    notes: "Активный Instagram, нет отдельного сайта и CRM-записи.",
-    createdAt: "2026-05-11T12:00:00.000Z",
-    updatedAt: "2026-05-11T12:00:00.000Z",
-  },
-  {
-    id: "seed-3",
-    source: "2gis",
-    companyName: "Mebel Line",
-    niche: "мебельный магазин",
-    city: "Бишкек",
-    phone: "+996 312 44 88 20",
-    whatsapp: "",
-    instagram: "@mebelline.kg",
-    website: "https://mebelline.example",
-    address: "ул. Льва Толстого, 19",
-    rating: 4.2,
-    reviewsCount: 43,
-    status: "fit",
-    priority: "medium",
-    notes: "Есть сайт, но стоит проверить скорость, каталог и мобильную версию.",
-    createdAt: "2026-05-12T09:30:00.000Z",
-    updatedAt: "2026-05-12T09:30:00.000Z",
-  },
-  {
-    id: "seed-4",
-    source: "manual",
-    companyName: "Cafe Mira",
-    niche: "кафе",
-    city: "Бишкек",
-    phone: "+996 500 909 100",
-    whatsapp: "https://wa.me/996500909100",
-    instagram: "@cafemira.kg",
-    website: "",
-    address: "ул. Токтогула, 57",
-    rating: 4.5,
-    reviewsCount: 210,
-    status: "contacted",
-    priority: "medium",
-    notes: "Можно предложить мини-сайт с меню, картой, доставкой и аналитикой.",
-    createdAt: "2026-05-13T08:20:00.000Z",
-    updatedAt: "2026-05-13T08:20:00.000Z",
-  },
-  {
-    id: "seed-5",
-    source: "instagram",
-    companyName: "Remont Pro KG",
-    niche: "ремонт квартир",
-    city: "Бишкек",
-    phone: "",
-    whatsapp: "https://wa.me/996777456789",
-    instagram: "@remontpro.kg",
-    website: "",
-    address: "",
-    rating: null,
-    reviewsCount: null,
-    status: "new",
-    priority: "medium",
-    notes: "Данные внесены вручную из публичного профиля. Автоскрейпинг Instagram не используется.",
-    createdAt: "2026-05-14T07:45:00.000Z",
-    updatedAt: "2026-05-14T07:45:00.000Z",
-  },
-];
-
-let leads = loadLeads();
+let leads = [];
 let selectedLeadId = null;
 
-function loadLeads() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedLeads));
-    return [...seedLeads];
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `API error ${response.status}`);
   }
 
-  try {
-    return JSON.parse(raw);
-  } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedLeads));
-    return [...seedLeads];
-  }
+  const type = response.headers.get("content-type") || "";
+  return type.includes("application/json") ? response.json() : response.text();
 }
 
-function saveLeads() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+async function loadLeads() {
+  const params = new URLSearchParams();
+  const search = document.querySelector("#searchInput")?.value || "";
+  const city = document.querySelector("#cityFilter")?.value || "";
+  const status = document.querySelector("#statusFilter")?.value || "";
+  const source = document.querySelector("#sourceFilter")?.value || "";
+  const noWebsite = document.querySelector("#noWebsiteFilter")?.checked || false;
+
+  if (search) params.set("search", search);
+  if (city) params.set("city", city);
+  if (status) params.set("status", status);
+  if (source) params.set("source", source);
+  if (noWebsite) params.set("hasWebsite", "false");
+
+  leads = await api(`/api/leads?${params}`);
+  await renderAll(true);
 }
 
-function uid() {
-  return `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function normalizeUrl(value) {
-  const url = String(value || "").trim();
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `https://${url}`;
-}
-
-function hasWebsite(lead) {
-  return Boolean(String(lead.website || "").trim());
+async function loadAllLeadsForStats() {
+  return api("/api/leads");
 }
 
 function statusLabel(value) {
   return statuses.find(([key]) => key === value)?.[1] || value;
 }
 
-function leadScore(lead) {
-  let score = 35;
-  if (!hasWebsite(lead)) score += 30;
-  if (Number(lead.rating) >= 4.4) score += 10;
-  if (Number(lead.reviewsCount) >= 50) score += 10;
-  if (lead.whatsapp || lead.phone) score += 8;
-  if (lead.instagram) score += 5;
-  if (lead.status === "do_not_contact" || lead.status === "not_fit") score = 0;
-  if (hasWebsite(lead)) score -= 12;
-  return Math.max(0, Math.min(100, score));
+function hasWebsite(lead) {
+  return Boolean(String(lead.website || "").trim());
 }
 
-function priorityByScore(score) {
-  if (score >= 78) return "urgent";
-  if (score >= 62) return "high";
-  if (score >= 40) return "medium";
-  return "low";
-}
-
-function upsertLead(input) {
-  const now = new Date().toISOString();
-  const website = normalizeUrl(input.website);
-  const candidate = {
-    id: input.id || uid(),
-    source: input.source || "manual",
-    companyName: input.companyName?.trim() || "Без названия",
-    niche: input.niche?.trim() || "",
-    city: input.city?.trim() || "",
-    phone: input.phone?.trim() || "",
-    whatsapp: input.whatsapp?.trim() || "",
-    instagram: input.instagram?.trim() || "",
-    website,
-    address: input.address?.trim() || "",
-    rating: input.rating === "" || input.rating == null ? null : Number(input.rating),
-    reviewsCount: input.reviewsCount === "" || input.reviewsCount == null ? null : Number(input.reviewsCount),
-    status: input.status || "new",
-    priority: input.priority || "medium",
-    notes: input.notes?.trim() || "",
-    createdAt: input.createdAt || now,
-    updatedAt: now,
-  };
-
-  candidate.priority = priorityByScore(leadScore(candidate));
-
-  const duplicateIndex = leads.findIndex((lead) => {
-    const sameName = lead.companyName.toLowerCase() === candidate.companyName.toLowerCase();
-    const samePhone = candidate.phone && lead.phone === candidate.phone;
-    const sameInstagram = candidate.instagram && lead.instagram.toLowerCase() === candidate.instagram.toLowerCase();
-    return samePhone || sameInstagram || (sameName && lead.city.toLowerCase() === candidate.city.toLowerCase());
-  });
-
-  if (duplicateIndex >= 0) {
-    leads[duplicateIndex] = { ...leads[duplicateIndex], ...candidate, id: leads[duplicateIndex].id, createdAt: leads[duplicateIndex].createdAt };
-  } else {
-    leads.unshift(candidate);
-  }
-
-  saveLeads();
-  renderAll();
-}
-
-function filteredLeads() {
-  const search = document.querySelector("#searchInput")?.value.toLowerCase() || "";
-  const city = document.querySelector("#cityFilter")?.value || "";
-  const status = document.querySelector("#statusFilter")?.value || "";
-  const source = document.querySelector("#sourceFilter")?.value || "";
-  const noWebsite = document.querySelector("#noWebsiteFilter")?.checked || false;
-
-  return leads.filter((lead) => {
-    const haystack = [lead.companyName, lead.niche, lead.city, lead.phone, lead.instagram, lead.website].join(" ").toLowerCase();
-    if (search && !haystack.includes(search)) return false;
-    if (city && lead.city !== city) return false;
-    if (status && lead.status !== status) return false;
-    if (source && lead.source !== source) return false;
-    if (noWebsite && hasWebsite(lead)) return false;
-    return true;
-  });
-}
-
-function renderMetrics() {
-  const total = leads.length;
-  const noSite = leads.filter((lead) => !hasWebsite(lead)).length;
-  const contacted = leads.filter((lead) => lead.status === "contacted").length;
-  const replied = leads.filter((lead) => ["replied", "interested", "call_scheduled", "client"].includes(lead.status)).length;
-  const clients = leads.filter((lead) => lead.status === "client").length;
+async function renderMetrics() {
+  const all = await loadAllLeadsForStats();
+  const total = all.length;
+  const noSite = all.filter((lead) => !hasWebsite(lead)).length;
+  const contacted = all.filter((lead) => lead.status === "contacted").length;
+  const replied = all.filter((lead) => ["replied", "interested", "call_scheduled", "client"].includes(lead.status)).length;
+  const clients = all.filter((lead) => lead.status === "client").length;
   const conversion = total ? `${Math.round((clients / total) * 100)}%` : "0%";
   const metrics = [
     ["Лидов", total],
@@ -251,15 +83,20 @@ function renderMetrics() {
   document.querySelector("#metricGrid").innerHTML = metrics
     .map(([label, value]) => `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div></div>`)
     .join("");
+
+  renderStats(all);
+  renderNoWebsitePreview(all);
+  renderFilters(all);
+  renderTasks(all);
 }
 
-function renderStats() {
-  renderGroupedStats("#nicheStats", "niche");
-  renderGroupedStats("#sourceStats", "source");
+function renderStats(all) {
+  renderGroupedStats("#nicheStats", all, "niche");
+  renderGroupedStats("#sourceStats", all, "source");
 }
 
-function renderGroupedStats(selector, key) {
-  const counts = leads.reduce((acc, lead) => {
+function renderGroupedStats(selector, items, key) {
+  const counts = items.reduce((acc, lead) => {
     const value = lead[key] || "Не указано";
     acc[value] = (acc[value] || 0) + 1;
     return acc;
@@ -274,8 +111,8 @@ function renderGroupedStats(selector, key) {
   document.querySelector(selector).innerHTML = rows || `<div class="empty-state">Пока нет данных</div>`;
 }
 
-function renderNoWebsitePreview() {
-  const rows = leads
+function renderNoWebsitePreview(all) {
+  const rows = all
     .filter((lead) => !hasWebsite(lead))
     .slice(0, 6)
     .map(
@@ -294,20 +131,25 @@ function renderNoWebsitePreview() {
   document.querySelector("#noWebsitePreview").innerHTML = rows || `<tr><td colspan="5">Нет лидов без сайта</td></tr>`;
 }
 
-function renderFilters() {
-  const cities = [...new Set(leads.map((lead) => lead.city).filter(Boolean))].sort();
-  const cityFilter = document.querySelector("#cityFilter");
-  cityFilter.innerHTML = `<option value="">Все города</option>${cities.map((city) => `<option value="${escapeAttr(city)}">${escapeHtml(city)}</option>`).join("")}`;
+function renderFilters(all) {
+  const currentCity = document.querySelector("#cityFilter").value;
+  const currentStatus = document.querySelector("#statusFilter").value;
+  const cities = [...new Set(all.map((lead) => lead.city).filter(Boolean))].sort();
+  document.querySelector("#cityFilter").innerHTML = `<option value="">Все города</option>${cities
+    .map((city) => `<option value="${escapeAttr(city)}" ${city === currentCity ? "selected" : ""}>${escapeHtml(city)}</option>`)
+    .join("")}`;
 
-  const statusOptions = `<option value="">Все статусы</option>${statuses.map(([key, label]) => `<option value="${key}">${label}</option>`).join("")}`;
-  document.querySelector("#statusFilter").innerHTML = statusOptions;
+  document.querySelector("#statusFilter").innerHTML = `<option value="">Все статусы</option>${statuses
+    .map(([key, label]) => `<option value="${key}" ${key === currentStatus ? "selected" : ""}>${label}</option>`)
+    .join("")}`;
+
   document.querySelector("#statusSelect").innerHTML = statuses.map(([key, label]) => `<option value="${key}">${label}</option>`).join("");
 }
 
 function renderLeadsTable() {
-  const rows = filteredLeads()
+  const rows = leads
     .map((lead) => {
-      const score = leadScore(lead);
+      const score = lead.leadScore ?? 0;
       const scoreClass = score >= 70 ? "" : score >= 45 ? "warning" : "danger";
       return `
         <tr data-lead-id="${lead.id}">
@@ -334,8 +176,10 @@ function renderLeadDetail() {
     return;
   }
 
-  const score = leadScore(lead);
-  const recommendation = buildRecommendation(lead);
+  const recommendation = hasWebsite(lead)
+    ? "У компании есть сайт. Приоритетнее предложить аудит скорости, адаптивности, SEO, формы заявок и интеграцию с CRM/WhatsApp."
+    : "У компании есть видимое присутствие в справочнике/соцсетях, но нет сайта. Лучше предложить короткий бесплатный разбор и простой сайт с заявками, WhatsApp-кнопкой, картой, отзывами и аналитикой.";
+
   container.innerHTML = `
     <div class="lead-detail-grid">
       <div>
@@ -344,7 +188,7 @@ function renderLeadDetail() {
             <h2>${escapeHtml(lead.companyName)}</h2>
             <p class="eyebrow">${escapeHtml(lead.niche || "Ниша не указана")} · ${escapeHtml(lead.city || "Город не указан")}</p>
           </div>
-          <span class="pill">${score}/100</span>
+          <span class="pill">${lead.leadScore ?? 0}/100</span>
         </div>
         <div class="detail-list">
           ${detailItem("Телефон", lead.phone || "—")}
@@ -379,48 +223,52 @@ function detailItem(label, value) {
   return `<div class="detail-item"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`;
 }
 
-function buildRecommendation(lead) {
-  if (!hasWebsite(lead)) {
-    return `У компании есть видимое присутствие в справочнике/соцсетях, но нет сайта. Лучше предложить короткий бесплатный разбор и простой сайт с заявками, WhatsApp-кнопкой, картой, отзывами и аналитикой.`;
-  }
-
-  return `У компании есть сайт. Приоритетнее предложить аудит скорости, адаптивности, SEO, формы заявок и интеграцию с CRM/WhatsApp.`;
-}
-
-function generateMessage(lead, channel = "WhatsApp") {
-  if (!lead) return "";
-  const intro = channel === "Звонок" ? "Здравствуйте" : "Здравствуйте!";
-  const source = lead.source === "2gis" ? "в 2GIS" : lead.source === "instagram" ? "в Instagram" : "в открытых контактах";
-  const noSiteText = hasWebsite(lead)
-    ? "заметил, что сайт можно проверить на скорость, мобильную версию и заявки"
-    : "не нашел у вас отдельный сайт";
-  const offer = hasWebsite(lead)
-    ? "могу бесплатно отправить короткий разбор, где сайт может терять заявки"
-    : "могу показать, как простой сайт с WhatsApp-кнопкой и картой может приносить больше обращений";
-
-  if (channel === "Звонок") {
-    return `${intro}, меня зовут [Ваше имя]. Нашел ${lead.companyName} ${source}. ${noSiteText}. Я занимаюсь сайтами и автоматизацией заявок для локального бизнеса. ${offer}. Куда удобнее отправить 3-4 пункта разбора?`;
-  }
-
-  return `${intro} Нашел ${lead.companyName} ${source}. У вас хороший бизнес${lead.rating ? ` и рейтинг ${lead.rating}` : ""}, но ${noSiteText}. Я занимаюсь разработкой сайтов и автоматизацией заявок для локальных компаний. ${offer}. Можно отправить вам короткий разбор?`;
-}
-
 function renderMessageSelect() {
-  const options = leads
+  document.querySelector("#messageLeadSelect").innerHTML = leads
     .map((lead) => `<option value="${lead.id}">${escapeHtml(lead.companyName)} · ${escapeHtml(lead.city || "—")}</option>`)
     .join("");
-  document.querySelector("#messageLeadSelect").innerHTML = options;
 }
 
-function renderTasks() {
-  const taskLeads = leads.filter((lead) => ["contacted", "replied", "interested", "call_scheduled"].includes(lead.status));
+function renderTasks(all = leads) {
+  const taskLeads = all.filter((lead) => ["contacted", "replied", "interested", "call_scheduled"].includes(lead.status));
   const html = taskLeads
     .map((lead) => {
-      const date = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString("ru-RU");
-      return `<div class="task-row"><strong>${escapeHtml(lead.companyName)}</strong><span>Follow-up до ${date}</span></div>`;
+      const date = lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString("ru-RU") : "ближайшие 2 дня";
+      return `<div class="task-row"><strong>${escapeHtml(lead.companyName)}</strong><span>Follow-up: ${date}</span></div>`;
     })
     .join("");
   document.querySelector("#tasksList").innerHTML = html || `<div class="empty-state">Нет активных follow-up задач</div>`;
+}
+
+async function generateMessage(leadId, channel) {
+  const payload = await api(`/api/ai/leads/${leadId}/message`, {
+    method: "POST",
+    body: JSON.stringify({ channel }),
+  });
+  return payload.content;
+}
+
+async function exportCsv() {
+  const params = new URLSearchParams();
+  const search = document.querySelector("#searchInput")?.value || "";
+  const city = document.querySelector("#cityFilter")?.value || "";
+  const status = document.querySelector("#statusFilter")?.value || "";
+  const source = document.querySelector("#sourceFilter")?.value || "";
+  const noWebsite = document.querySelector("#noWebsiteFilter")?.checked || false;
+  if (search) params.set("search", search);
+  if (city) params.set("city", city);
+  if (status) params.set("status", status);
+  if (source) params.set("source", source);
+  if (noWebsite) params.set("hasWebsite", "false");
+
+  const response = await fetch(`/api/leads/export.csv?${params}`);
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `lead-crm-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function parseCsv(text) {
@@ -458,47 +306,11 @@ function parseCsvLine(line) {
   return result;
 }
 
-function exportCsv() {
-  const headers = ["id", "source", "companyName", "niche", "city", "phone", "whatsapp", "instagram", "website", "address", "rating", "reviewsCount", "status", "priority", "notes", "createdAt", "updatedAt"];
-  const rows = [headers.join(",")].concat(
-    filteredLeads().map((lead) => headers.map((key) => csvCell(lead[key] ?? "")).join(","))
-  );
-  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `lead-crm-export-${new Date().toISOString().slice(0, 10)}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function csvCell(value) {
-  const text = String(value).replaceAll('"', '""');
-  return `"${text}"`;
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value);
-}
-
-function renderAll() {
-  renderMetrics();
-  renderStats();
-  renderNoWebsitePreview();
-  renderFilters();
+async function renderAll(refreshStats = true) {
+  if (refreshStats) await renderMetrics();
   renderLeadsTable();
   renderLeadDetail();
   renderMessageSelect();
-  renderTasks();
 }
 
 function bindEvents() {
@@ -514,87 +326,141 @@ function bindEvents() {
     });
   });
 
-  document.querySelector("#leadForm").addEventListener("submit", (event) => {
+  document.querySelector("#leadForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    upsertLead(Object.fromEntries(formData.entries()));
+    await api("/api/leads", {
+      method: "POST",
+      body: JSON.stringify(Object.fromEntries(formData.entries())),
+    });
     event.currentTarget.reset();
+    await loadLeads();
   });
 
   ["searchInput", "cityFilter", "statusFilter", "sourceFilter", "noWebsiteFilter"].forEach((id) => {
-    document.querySelector(`#${id}`).addEventListener("input", renderLeadsTable);
+    document.querySelector(`#${id}`).addEventListener("input", loadLeads);
   });
 
-  document.body.addEventListener("click", (event) => {
+  document.body.addEventListener("click", async (event) => {
     const row = event.target.closest("[data-lead-id]");
     if (row) {
       selectedLeadId = row.dataset.leadId;
       document.querySelector('[data-view="clients"]').click();
-      renderLeadDetail();
+      await loadLeads();
     }
 
     if (event.target.matches("[data-filter-no-site]")) {
       document.querySelector('[data-view="clients"]').click();
       document.querySelector("#noWebsiteFilter").checked = true;
-      renderLeadsTable();
+      await loadLeads();
     }
   });
 
-  document.querySelector("#leadDetail").addEventListener("click", (event) => {
+  document.querySelector("#leadDetail").addEventListener("click", async (event) => {
     const lead = leads.find((item) => item.id === selectedLeadId);
     if (!lead) return;
 
     if (event.target.id === "detailSaveButton") {
-      lead.status = document.querySelector("#detailStatus").value;
-      lead.notes = document.querySelector("#detailNotes").value;
-      lead.updatedAt = new Date().toISOString();
-      saveLeads();
-      renderAll();
+      await api(`/api/leads/${lead.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: document.querySelector("#detailStatus").value,
+          notes: document.querySelector("#detailNotes").value,
+        }),
+      });
+      await loadLeads();
     }
 
     if (event.target.id === "detailGenerateButton") {
       document.querySelector('[data-view="messages"]').click();
       document.querySelector("#messageLeadSelect").value = lead.id;
       document.querySelector("#messageChannel").value = "WhatsApp";
-      document.querySelector("#generatedMessage").value = generateMessage(lead, "WhatsApp");
+      document.querySelector("#generatedMessage").value = "Генерирую через backend...";
+      document.querySelector("#generatedMessage").value = await generateMessage(lead.id, "WhatsApp");
     }
 
     if (event.target.id === "detailFollowUpButton") {
-      lead.status = "contacted";
-      lead.updatedAt = new Date().toISOString();
-      saveLeads();
-      renderAll();
+      const next = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+      await api(`/api/leads/${lead.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "contacted",
+          lastContactDate: new Date().toISOString(),
+          nextFollowUpDate: next,
+        }),
+      });
+      await loadLeads();
       document.querySelector('[data-view="tasks"]').click();
     }
   });
 
-  document.querySelector("#generateMessageButton").addEventListener("click", () => {
-    const lead = leads.find((item) => item.id === document.querySelector("#messageLeadSelect").value);
+  document.querySelector("#generateMessageButton").addEventListener("click", async () => {
+    const leadId = document.querySelector("#messageLeadSelect").value;
     const channel = document.querySelector("#messageChannel").value;
-    document.querySelector("#generatedMessage").value = generateMessage(lead, channel);
+    document.querySelector("#generatedMessage").value = "Генерирую через backend...";
+    document.querySelector("#generatedMessage").value = await generateMessage(leadId, channel);
   });
 
   document.querySelector("#csvInput").addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    parseCsv(text).forEach(upsertLead);
+    for (const item of parseCsv(text)) {
+      await api("/api/leads", {
+        method: "POST",
+        body: JSON.stringify(item),
+      });
+    }
     event.target.value = "";
+    await loadLeads();
   });
 
-  document.querySelector("#sampleImportButton").addEventListener("click", () => {
-    seedLeads.forEach((lead) => upsertLead({ ...lead, id: undefined }));
+  document.querySelector("#twoGisForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const found = await api("/api/integrations/2gis/search-and-save", {
+      method: "POST",
+      body: JSON.stringify(Object.fromEntries(formData.entries())),
+    });
+    alert(`Найдено и сохранено лидов: ${found.length}`);
+    await loadLeads();
+    document.querySelector('[data-view="clients"]').click();
+  });
+
+  document.querySelector("#sampleImportButton").addEventListener("click", async () => {
+    const found = await api("/api/integrations/2gis/search-and-save", {
+      method: "POST",
+      body: JSON.stringify({ city: "Бишкек", query: "стоматология" }),
+    });
+    alert(`Добавлено/обновлено лидов: ${found.length}`);
+    await loadLeads();
   });
 
   document.querySelector("#exportButton").addEventListener("click", exportCsv);
 
-  document.querySelector("#resetSeedButton").addEventListener("click", () => {
-    leads = [...seedLeads];
-    selectedLeadId = null;
-    saveLeads();
-    renderAll();
+  document.querySelector("#resetSeedButton").addEventListener("click", async () => {
+    await api("/api/integrations/2gis/search-and-save", {
+      method: "POST",
+      body: JSON.stringify({ city: "Бишкек", query: "салон красоты" }),
+    });
+    await loadLeads();
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
 bindEvents();
-renderAll();
+loadLeads().catch((error) => {
+  document.body.innerHTML = `<pre style="padding:24px;white-space:pre-wrap">Backend error: ${escapeHtml(error.message)}\n\nЗапустите приложение командой: npm start</pre>`;
+});

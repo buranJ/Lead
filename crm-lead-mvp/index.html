@@ -149,6 +149,26 @@
 
             <section class="panel">
               <div class="panel-header">
+                <h2>2GIS API поиск</h2>
+              </div>
+              <form id="twoGisForm" class="form-grid">
+                <label>
+                  Город
+                  <input name="city" value="Бишкек" placeholder="Бишкек" />
+                </label>
+                <label>
+                  Ниша / ключевое слово
+                  <input name="query" value="стоматология" placeholder="стоматология" />
+                </label>
+                <button class="secondary-button full-width" type="submit">Найти и сохранить через backend</button>
+              </form>
+              <div class="legal-note">
+                Если `TWO_GIS_API_KEY` не задан, backend вернет демо-результаты. С ключом запрос идет в официальный 2GIS API.
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
                 <h2>Импорт CSV</h2>
               </div>
               <div class="import-box">

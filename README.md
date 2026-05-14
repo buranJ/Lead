@@ -1,55 +1,108 @@
-# Lead CRM MVP
+# Lead CRM
 
-CRM-приложение для поиска потенциальных клиентов 
+Рабочая MVP-версия CRM для поиска потенциальных клиентов веб-студии / frontend-разработчика.
 
-## Что уже реализовано
+## Что входит
 
-- Dashboard с KPI: все лиды, без сайта, написали, ответили, клиенты, конверсия.
-- База клиентов с фильтрами по городу, статусу, источнику и признаку "без сайта".
-- Карточка клиента с контактами, статусом, заметками и AI-рекомендацией.
-- Ручное добавление лидов.
+- Backend API на Node.js без внешних зависимостей.
+- Frontend CRM, который работает через backend API.
+- Файловая база данных: `server/data/leads.json`.
+- CRUD лидов.
+- Dashboard и KPI.
+- Фильтр "без сайта".
+- Карточка клиента.
+- Статусы и follow-up даты.
 - CSV-импорт.
-- CSV-экспорт текущей выборки.
-- Генератор персональных сообщений для WhatsApp, Instagram Direct, Email и звонка.
-- Follow-up задачи на основе статусов.
-- Локальное хранение в `localStorage`.
+- CSV-экспорт.
+- 2GIS integration endpoint.
+- AI message endpoint через OpenAI API или локальный fallback.
 
-## Как запустить
+## Запуск
 
-Откройте файл:
-
-```text
-crm-lead-mvp/index.html
+```bash
+npm start
 ```
 
-Приложение работает без установки зависимостей и без backend.
+Откройте:
 
-## Юридическая модель MVP
+```text
+http://localhost:4173
+```
 
-- 2GIS: использовать официальный API или разрешенную выгрузку.
+Проверка синтаксиса:
+
+```bash
+npm run check
+```
+
+## Переменные окружения
+
+Создайте `.env` по примеру:
+
+```bash
+cp .env.example .env
+```
+
+Поля:
+
+```text
+PORT=4173
+TWO_GIS_API_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Если `TWO_GIS_API_KEY` не задан, endpoint 2GIS возвращает демо-лиды, чтобы приложение сразу работало.
+
+Если `OPENAI_API_KEY` не задан, генерация сообщений работает через локальный шаблон.
+
+## API
+
+```text
+GET  /api/health
+GET  /api/leads
+POST /api/leads
+GET  /api/leads/:id
+PATCH /api/leads/:id
+GET  /api/leads/export.csv
+
+POST /api/integrations/2gis/search
+POST /api/integrations/2gis/search-and-save
+
+POST /api/ai/leads/:id/message
+```
+
+Пример поиска 2GIS:
+
+```bash
+curl -X POST http://localhost:4173/api/integrations/2gis/search-and-save \
+  -H "Content-Type: application/json" \
+  -d '{"city":"Бишкек","query":"стоматология"}'
+```
+
+Пример AI-сообщения:
+
+```bash
+curl -X POST http://localhost:4173/api/ai/leads/seed-1/message \
+  -H "Content-Type: application/json" \
+  -d '{"channel":"WhatsApp"}'
+```
+
+## Легальная модель
+
+- 2GIS: использовать официальный API и соблюдать условия, лимиты и тарифы.
 - Instagram: не использовать автоматический скрейпинг, обход авторизации, капч, лимитов и защиты.
 - Instagram-данные в MVP добавляются вручную или через официальные способы доступа Meta.
-- Отправка сообщений остается ручной, без автоматических массовых рассылок.
+- Массовая авторассылка не реализована. Сообщения генерируются для ручной проверки и отправки.
 
-## Production-архитектура
+## Следующий production-этап
 
-```text
-Frontend: Next.js + TypeScript + Tailwind + Zustand + React Hook Form
-Backend: NestJS + Prisma + PostgreSQL
-Jobs: Redis + BullMQ
-AI: OpenAI API или Gemini API
-Integrations: 2GIS official API, Meta official APIs, CSV import
-```
-
-## Roadmap
-
-1. Перенести frontend на Next.js.
-2. Добавить NestJS API.
-3. Подключить PostgreSQL и Prisma.
-4. Реализовать официальный 2GIS API модуль.
-5. Добавить авторизацию и роли.
-6. Добавить аудит сайтов: SSL, доступность, скорость, адаптивность.
-7. Добавить lead scoring 0-100 на backend.
-8. Добавить полноценного AI-агента с сохранением анализа.
-9. Добавить историю контактов и follow-up задачи.
-10. Добавить безопасные интеграции с email/WhatsApp/Telegram.
+- Next.js frontend.
+- NestJS backend.
+- PostgreSQL + Prisma.
+- Redis + BullMQ для фоновых задач.
+- Website audit module: SSL, доступность, скорость, адаптивность.
+- Lead scoring module на backend.
+- Auth и роли пользователей.
+- История контактов.
+- Безопасные интеграции WhatsApp/Telegram/email.
