@@ -11,6 +11,17 @@ const dataDir = path.join(__dirname, "data");
 const leadsPath = path.join(dataDir, "leads.json");
 const env = await loadEnv(path.join(rootDir, ".env"));
 const port = Number(env.PORT || process.env.PORT || 4173);
+const twoGisFields = "items.point,items.contact_groups,items.reviews,items.rubrics,items.address_name,items.full_address_name,items.name,items.external_content,items.links,items.adm_div";
+const knownCityPoints = new Map([
+  ["бишкек", "74.5698,42.8746"],
+  ["bishkek", "74.5698,42.8746"],
+  ["алматы", "76.9455,43.2389"],
+  ["almaty", "76.9455,43.2389"],
+  ["астана", "71.4304,51.1282"],
+  ["astana", "71.4304,51.1282"],
+  ["ош", "72.7985,40.5139"],
+  ["osh", "72.7985,40.5139"],
+]);
 
 const statuses = new Set([
   "new",
@@ -258,33 +269,12 @@ function enrichLead(lead) {
 async function searchTwoGis({ city = "", query = "", category = "", save = false }) {
   const apiKey = env.TWO_GIS_API_KEY || process.env.TWO_GIS_API_KEY;
   const searchQuery = clean(query || category);
-  const fullQuery = [city, searchQuery].filter(Boolean).join(" ").trim();
   if (!apiKey) {
     return demoTwoGisLeads(city, searchQuery);
   }
 
-  const cityId = city ? await resolveTwoGisCityId(city, apiKey) : "";
-  const apiUrl = new URL("https://catalog.api.2gis.com/3.0/items");
-  apiUrl.searchParams.set("q", searchQuery || fullQuery);
-  apiUrl.searchParams.set("key", apiKey);
-  apiUrl.searchParams.set("page_size", "20");
-  apiUrl.searchParams.set("type", "branch");
-  apiUrl.searchParams.set("locale", env.TWO_GIS_LOCALE || process.env.TWO_GIS_LOCALE || "ru_KG");
-  apiUrl.searchParams.set("sort", "rating");
-  if (cityId) {
-    apiUrl.searchParams.set("city_id", cityId);
-  }
-  apiUrl.searchParams.set("fields", "items.point,items.contact_groups,items.reviews,items.rubrics,items.address_name,items.name,items.external_content,items.links");
-
-  const response = await fetch(apiUrl);
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`2GIS API error ${response.status}: ${text.slice(0, 240)}`);
-  }
-
-  const payload = await response.json();
-  const items = payload?.result?.items || [];
-  const leads = items.map((item) => mapTwoGisItem(item, city, query || category));
+  const { items } = await runTwoGisSearchStrategies(city, searchQuery, apiKey, 10);
+  const leads = items.map((item) => mapTwoGisItem(item, city, searchQuery));
   if (!save) return leads;
 
   const saved = [];
@@ -303,14 +293,94 @@ async function debugTwoGis({ city = "", query = "", category = "" }) {
     };
   }
 
+  const result = await runTwoGisSearchStrategies(city, searchQuery, apiKey, 5);
+  return {
+    ok: result.attempts.some((attempt) => attempt.ok),
+    city,
+    cityId: result.cityId,
+    query: searchQuery,
+    total: result.items.length,
+    attempts: result.attempts,
+    firstItems: result.items.slice(0, 5).map((item) => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      subtype: item.subtype,
+      address: item.address_name || item.full_address_name,
+    })),
+  };
+}
+
+async function runTwoGisSearchStrategies(city, searchQuery, apiKey, pageSize) {
   const cityId = city ? await resolveTwoGisCityId(city, apiKey) : "";
+  const cityPoint = knownCityPoints.get(clean(city).toLowerCase()) || "";
+  const fullQuery = [city, searchQuery].filter(Boolean).join(" ").trim();
+  const strategies = [];
+
+  if (cityId) {
+    strategies.push({
+      name: "q + city_id",
+      params: { q: searchQuery || fullQuery, city_id: cityId, type: "branch", sort: "rating" },
+    });
+  }
+
+  strategies.push({
+    name: "full text city + query",
+    params: { q: fullQuery || searchQuery, type: "branch", sort: "rating" },
+  });
+
+  if (cityPoint) {
+    strategies.push({
+      name: "q + location near city",
+      params: { q: searchQuery || fullQuery, location: cityPoint, search_nearby: "true", type: "branch", sort: "rating" },
+    });
+  }
+
+  strategies.push({
+    name: "plain q without city filter",
+    params: { q: searchQuery || fullQuery, type: "branch", sort: "rating" },
+  });
+
+  const seen = new Set();
+  const items = [];
+  const attempts = [];
+
+  for (const strategy of strategies) {
+    if (!clean(strategy.params.q)) continue;
+    const { ok, response, payload, url } = await fetchTwoGisItems(apiKey, strategy.params, pageSize);
+    const strategyItems = payload?.result?.items || [];
+    attempts.push({
+      name: strategy.name,
+      ok,
+      status: response.status,
+      metaCode: payload?.meta?.code ?? null,
+      url: maskUrlKey(url),
+      total: payload?.result?.total ?? strategyItems.length,
+      count: strategyItems.length,
+      error: ok ? "" : payload?.meta?.error || payload,
+    });
+
+    if (!ok) continue;
+    for (const item of strategyItems) {
+      if (!item.id || seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push(item);
+    }
+    if (items.length >= pageSize) break;
+  }
+
+  return { cityId, attempts, items: items.slice(0, pageSize) };
+}
+
+async function fetchTwoGisItems(apiKey, params, pageSize) {
   const apiUrl = new URL("https://catalog.api.2gis.com/3.0/items");
-  apiUrl.searchParams.set("q", searchQuery || city);
   apiUrl.searchParams.set("key", apiKey);
-  apiUrl.searchParams.set("page_size", "5");
-  apiUrl.searchParams.set("type", "branch");
+  apiUrl.searchParams.set("page_size", String(Math.max(1, Math.min(10, Number(pageSize) || 10))));
   apiUrl.searchParams.set("locale", env.TWO_GIS_LOCALE || process.env.TWO_GIS_LOCALE || "ru_KG");
-  if (cityId) apiUrl.searchParams.set("city_id", cityId);
+  apiUrl.searchParams.set("fields", twoGisFields);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== "" && value != null) apiUrl.searchParams.set(key, String(value));
+  }
 
   const response = await fetch(apiUrl);
   const text = await response.text();
@@ -321,24 +391,8 @@ async function debugTwoGis({ city = "", query = "", category = "" }) {
     payload = { raw: text.slice(0, 500) };
   }
 
-  apiUrl.searchParams.set("key", "***");
-  return {
-    ok: response.ok,
-    status: response.status,
-    city,
-    cityId,
-    query: searchQuery,
-    requestUrl: apiUrl.toString(),
-    total: payload?.result?.total ?? payload?.result?.items?.length ?? 0,
-    firstItems: (payload?.result?.items || []).slice(0, 3).map((item) => ({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      subtype: item.subtype,
-      address: item.address_name,
-    })),
-    error: response.ok ? "" : payload,
-  };
+  const ok = response.ok && (!payload?.meta?.code || payload.meta.code < 400);
+  return { ok, response, payload, url: apiUrl.toString() };
 }
 
 async function resolveTwoGisCityId(city, apiKey) {
@@ -360,7 +414,13 @@ async function resolveTwoGisCityId(city, apiKey) {
     items.find((item) => clean(item.subtype).includes("city")) ||
     items[0];
 
-  return clean(cityItem?.id).split("_")[0];
+  return clean(cityItem?.id);
+}
+
+function maskUrlKey(url) {
+  const masked = new URL(url);
+  if (masked.searchParams.has("key")) masked.searchParams.set("key", "***");
+  return masked.toString();
 }
 
 function mapTwoGisItem(item, city, niche) {
