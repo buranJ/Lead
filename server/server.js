@@ -99,6 +99,13 @@ async function routeApi(req, res, url) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/integrations/2gis/debug") {
+    const body = await readJson(req);
+    const result = await debugTwoGis(body);
+    sendJson(res, 200, result);
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/api/integrations/2gis/search-and-save") {
     const body = await readJson(req);
     const found = await searchTwoGis(body);
@@ -250,15 +257,23 @@ function enrichLead(lead) {
 
 async function searchTwoGis({ city = "", query = "", category = "", save = false }) {
   const apiKey = env.TWO_GIS_API_KEY || process.env.TWO_GIS_API_KEY;
-  const fullQuery = [city, query, category].filter(Boolean).join(" ").trim();
+  const searchQuery = clean(query || category);
+  const fullQuery = [city, searchQuery].filter(Boolean).join(" ").trim();
   if (!apiKey) {
-    return demoTwoGisLeads(city, query || category);
+    return demoTwoGisLeads(city, searchQuery);
   }
 
+  const cityId = city ? await resolveTwoGisCityId(city, apiKey) : "";
   const apiUrl = new URL("https://catalog.api.2gis.com/3.0/items");
-  apiUrl.searchParams.set("q", fullQuery);
+  apiUrl.searchParams.set("q", searchQuery || fullQuery);
   apiUrl.searchParams.set("key", apiKey);
   apiUrl.searchParams.set("page_size", "20");
+  apiUrl.searchParams.set("type", "branch");
+  apiUrl.searchParams.set("locale", env.TWO_GIS_LOCALE || process.env.TWO_GIS_LOCALE || "ru_KG");
+  apiUrl.searchParams.set("sort", "rating");
+  if (cityId) {
+    apiUrl.searchParams.set("city_id", cityId);
+  }
   apiUrl.searchParams.set("fields", "items.point,items.contact_groups,items.reviews,items.rubrics,items.address_name,items.name,items.external_content,items.links");
 
   const response = await fetch(apiUrl);
@@ -275,6 +290,77 @@ async function searchTwoGis({ city = "", query = "", category = "", save = false
   const saved = [];
   for (const lead of leads) saved.push(await upsertLead(lead));
   return saved;
+}
+
+async function debugTwoGis({ city = "", query = "", category = "" }) {
+  const apiKey = env.TWO_GIS_API_KEY || process.env.TWO_GIS_API_KEY;
+  const searchQuery = clean(query || category);
+  if (!apiKey) {
+    return {
+      ok: false,
+      reason: "TWO_GIS_API_KEY is not set on backend",
+      demoResults: demoTwoGisLeads(city, searchQuery).length,
+    };
+  }
+
+  const cityId = city ? await resolveTwoGisCityId(city, apiKey) : "";
+  const apiUrl = new URL("https://catalog.api.2gis.com/3.0/items");
+  apiUrl.searchParams.set("q", searchQuery || city);
+  apiUrl.searchParams.set("key", apiKey);
+  apiUrl.searchParams.set("page_size", "5");
+  apiUrl.searchParams.set("type", "branch");
+  apiUrl.searchParams.set("locale", env.TWO_GIS_LOCALE || process.env.TWO_GIS_LOCALE || "ru_KG");
+  if (cityId) apiUrl.searchParams.set("city_id", cityId);
+
+  const response = await fetch(apiUrl);
+  const text = await response.text();
+  let payload = null;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    payload = { raw: text.slice(0, 500) };
+  }
+
+  apiUrl.searchParams.set("key", "***");
+  return {
+    ok: response.ok,
+    status: response.status,
+    city,
+    cityId,
+    query: searchQuery,
+    requestUrl: apiUrl.toString(),
+    total: payload?.result?.total ?? payload?.result?.items?.length ?? 0,
+    firstItems: (payload?.result?.items || []).slice(0, 3).map((item) => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      subtype: item.subtype,
+      address: item.address_name,
+    })),
+    error: response.ok ? "" : payload,
+  };
+}
+
+async function resolveTwoGisCityId(city, apiKey) {
+  const apiUrl = new URL("https://catalog.api.2gis.com/3.0/items");
+  apiUrl.searchParams.set("q", city);
+  apiUrl.searchParams.set("key", apiKey);
+  apiUrl.searchParams.set("type", "adm_div.city");
+  apiUrl.searchParams.set("page_size", "5");
+  apiUrl.searchParams.set("locale", env.TWO_GIS_LOCALE || process.env.TWO_GIS_LOCALE || "ru_KG");
+
+  const response = await fetch(apiUrl);
+  if (!response.ok) return "";
+
+  const payload = await response.json();
+  const items = payload?.result?.items || [];
+  const normalizedCity = city.toLowerCase();
+  const cityItem =
+    items.find((item) => clean(item.subtype).includes("city") && clean(item.name).toLowerCase() === normalizedCity) ||
+    items.find((item) => clean(item.subtype).includes("city")) ||
+    items[0];
+
+  return clean(cityItem?.id).split("_")[0];
 }
 
 function mapTwoGisItem(item, city, niche) {
@@ -541,10 +627,17 @@ async function loadEnv(filePath) {
         .filter((line) => line && !line.startsWith("#"))
         .map((line) => {
           const index = line.indexOf("=");
-          return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
+          return [line.slice(0, index).trim(), stripEnvQuotes(line.slice(index + 1).trim())];
         })
     );
   } catch {
     return {};
   }
+}
+
+function stripEnvQuotes(value) {
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+  return value;
 }

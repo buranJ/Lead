@@ -48,6 +48,7 @@ cp .env.example .env
 ```text
 PORT=4173
 TWO_GIS_API_KEY=
+TWO_GIS_LOCALE=ru_KG
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ```
@@ -68,6 +69,7 @@ GET  /api/leads/export.csv
 
 POST /api/integrations/2gis/search
 POST /api/integrations/2gis/search-and-save
+POST /api/integrations/2gis/debug
 
 POST /api/ai/leads/:id/message
 ```
@@ -76,6 +78,14 @@ POST /api/ai/leads/:id/message
 
 ```bash
 curl -X POST http://localhost:4173/api/integrations/2gis/search-and-save \
+  -H "Content-Type: application/json" \
+  -d '{"city":"Бишкек","query":"стоматология"}'
+```
+
+Если поиск ничего не вернул, проверьте диагностику:
+
+```bash
+curl -X POST http://localhost:4173/api/integrations/2gis/debug \
   -H "Content-Type: application/json" \
   -d '{"city":"Бишкек","query":"стоматология"}'
 ```
