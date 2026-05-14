@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead CRM MVP</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">LC</div>
+          <div>
+            <div class="brand-title">Lead CRM</div>
+            <div class="brand-subtitle">web studio pipeline</div>
+          </div>
+        </div>
+        <nav class="nav-list" aria-label="Основная навигация">
+          <button class="nav-item is-active" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" data-view="search">Поиск лидов</button>
+          <button class="nav-item" data-view="clients">База клиентов</button>
+          <button class="nav-item" data-view="messages">Сообщения</button>
+          <button class="nav-item" data-view="tasks">Задачи</button>
+          <button class="nav-item" data-view="settings">Настройки</button>
+        </nav>
+        <div class="sidebar-note">
+          <strong>MVP режим</strong>
+          <span>Данные хранятся локально в браузере. Для production подключается API, PostgreSQL и очереди.</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">CRM для поиска клиентов</p>
+            <h1 id="pageTitle">Dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="resetSeedButton" title="Загрузить демо-данные">↻</button>
+            <button class="primary-button" id="exportButton">Экспорт CSV</button>
+          </div>
+        </header>
+
+        <section class="view is-visible" id="dashboardView" data-title="Dashboard">
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Лучшие ниши</h2>
+              </div>
+              <div id="nicheStats" class="stat-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Источники</h2>
+              </div>
+              <div id="sourceStats" class="stat-list"></div>
+            </section>
+          </div>
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Лиды без сайта</h2>
+              <button class="ghost-button" data-filter-no-site>Показать</button>
+            </div>
+            <div class="table-wrap compact">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Компания</th>
+                    <th>Ниша</th>
+                    <th>Город</th>
+                    <th>Рейтинг</th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody id="noWebsitePreview"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="searchView" data-title="Поиск лидов">
+          <div class="content-grid two-columns">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Поиск / ручное добавление</h2>
+              </div>
+              <form id="leadForm" class="form-grid">
+                <label>
+                  Компания
+                  <input name="companyName" required placeholder="Smile Dent" />
+                </label>
+                <label>
+                  Источник
+                  <select name="source">
+                    <option value="2gis">2GIS</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </label>
+                <label>
+                  Ниша
+                  <input name="niche" placeholder="стоматология" />
+                </label>
+                <label>
+                  Город
+                  <input name="city" placeholder="Бишкек" />
+                </label>
+                <label>
+                  Телефон
+                  <input name="phone" placeholder="+996..." />
+                </label>
+                <label>
+                  WhatsApp
+                  <input name="whatsapp" placeholder="https://wa.me/..." />
+                </label>
+                <label>
+                  Instagram
+                  <input name="instagram" placeholder="@company" />
+                </label>
+                <label>
+                  Сайт
+                  <input name="website" placeholder="https://example.kg" />
+                </label>
+                <label>
+                  Адрес
+                  <input name="address" placeholder="ул. Киевская, 10" />
+                </label>
+                <label>
+                  Рейтинг
+                  <input name="rating" type="number" min="0" max="5" step="0.1" placeholder="4.7" />
+                </label>
+                <label>
+                  Отзывы
+                  <input name="reviewsCount" type="number" min="0" step="1" placeholder="128" />
+                </label>
+                <label>
+                  Статус
+                  <select name="status" id="statusSelect"></select>
+                </label>
+                <label class="full-width">
+                  Заметки
+                  <textarea name="notes" placeholder="Что заметили о бизнесе"></textarea>
+                </label>
+                <button class="primary-button full-width" type="submit">Сохранить лида</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Импорт CSV</h2>
+              </div>
+              <div class="import-box">
+                <p>Поддерживаются колонки: companyName, niche, city, phone, whatsapp, instagram, website, address, rating, reviewsCount, source.</p>
+                <input id="csvInput" type="file" accept=".csv,text/csv" />
+                <button class="secondary-button" id="sampleImportButton">Добавить примеры из 2GIS</button>
+              </div>
+              <div class="legal-note">
+                2GIS подключается через официальный API или разрешенную выгрузку. Instagram в MVP не скрейпится автоматически.
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="clientsView" data-title="База клиентов">
+          <section class="panel">
+            <div class="toolbar">
+              <input id="searchInput" placeholder="Поиск по компании, нише, телефону..." />
+              <select id="cityFilter"></select>
+              <select id="statusFilter"></select>
+              <select id="sourceFilter">
+                <option value="">Все источники</option>
+                <option value="2gis">2GIS</option>
+                <option value="instagram">Instagram</option>
+                <option value="manual">Manual</option>
+              </select>
+              <label class="toggle-label">
+                <input type="checkbox" id="noWebsiteFilter" />
+                Без сайта
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Компания</th>
+                    <th>Ниша</th>
+                    <th>Город</th>
+                    <th>Контакт</th>
+                    <th>Сайт</th>
+                    <th>Score</th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody id="leadsTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel detail-panel" id="leadDetail">
+            <div class="empty-state">Выберите лида в таблице, чтобы открыть карточку.</div>
+          </section>
+        </section>
+
+        <section class="view" id="messagesView" data-title="Сообщения">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>AI-генератор сообщения</h2>
+            </div>
+            <div class="message-builder">
+              <label>
+                Лид
+                <select id="messageLeadSelect"></select>
+              </label>
+              <label>
+                Канал
+                <select id="messageChannel">
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Instagram Direct">Instagram Direct</option>
+                  <option value="Email">Email</option>
+                  <option value="Звонок">Звонок</option>
+                </select>
+              </label>
+              <button class="primary-button" id="generateMessageButton">Сгенерировать</button>
+            </div>
+            <textarea id="generatedMessage" class="message-output" placeholder="Здесь появится персональное сообщение"></textarea>
+          </section>
+        </section>
+
+        <section class="view" id="tasksView" data-title="Задачи">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Follow-up задачи</h2>
+            </div>
+            <div id="tasksList" class="task-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="settingsView" data-title="Настройки">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Интеграции</h2>
+            </div>
+            <div class="settings-list">
+              <div>
+                <strong>2GIS API</strong>
+                <span>В production хранить ключ на backend и запускать поиск через очередь BullMQ.</span>
+              </div>
+              <div>
+                <strong>Instagram</strong>
+                <span>Только официальные API Meta, ручной импорт или разрешенные партнерские источники.</span>
+              </div>
+              <div>
+                <strong>AI</strong>
+                <span>OpenAI/Gemini API на backend, логирование prompt/result, ручное подтверждение перед отправкой.</span>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
