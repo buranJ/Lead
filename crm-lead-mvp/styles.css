@@ -396,6 +396,23 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
+.open-link {
+  color: var(--accent-2);
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.open-link:hover,
+.detail-item a:hover {
+  text-decoration: underline;
+}
+
+.detail-item a {
+  color: var(--accent-2);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
 .pill.warning {
   color: var(--warning);
   background: #fff6df;

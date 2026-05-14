@@ -1,5 +1,130 @@
 [
   {
+    "id": "lead-1778796064567-efba3c1cc6a1c",
+    "source": "2gis",
+    "externalId": "70000001037156145",
+    "companyName": "Distore, магазин косметики",
+    "niche": "Косметика и парфюмерия",
+    "city": "Бишкек",
+    "phone": "",
+    "whatsapp": "",
+    "instagram": "",
+    "website": "",
+    "address": "улица Медерова, 44/1",
+    "rating": 4.9,
+    "reviewsCount": 1196,
+    "latitude": 42.851705,
+    "longitude": 74.615691,
+    "sourceUrl": "https://2gis.kg/bishkek/firm/70000001037156145",
+    "status": "new",
+    "priority": "urgent",
+    "notes": "Импортировано через официальный 2GIS API.",
+    "lastContactDate": "",
+    "nextFollowUpDate": "",
+    "createdAt": "2026-05-14T22:01:04.567Z",
+    "updatedAt": "2026-05-14T22:01:04.567Z"
+  },
+  {
+    "id": "lead-1778796064562-6770bf32cd797",
+    "source": "2gis",
+    "externalId": "70000001020209993",
+    "companyName": "L`Occitane en Provence, магазин",
+    "niche": "Косметика и парфюмерия",
+    "city": "Бишкек",
+    "phone": "",
+    "whatsapp": "",
+    "instagram": "",
+    "website": "",
+    "address": "проспект Манаса, 38",
+    "rating": 5,
+    "reviewsCount": 302,
+    "latitude": 42.874989,
+    "longitude": 74.587948,
+    "sourceUrl": "https://2gis.kg/bishkek/firm/70000001020209993",
+    "status": "new",
+    "priority": "urgent",
+    "notes": "Импортировано через официальный 2GIS API.",
+    "lastContactDate": "",
+    "nextFollowUpDate": "",
+    "createdAt": "2026-05-14T22:01:04.562Z",
+    "updatedAt": "2026-05-14T22:01:04.563Z"
+  },
+  {
+    "id": "lead-1778796064560-074d1c544f635",
+    "source": "2gis",
+    "externalId": "70000001036560101",
+    "companyName": "Beauty showroom, магазин косметики и парфюмерии",
+    "niche": "Косметика и парфюмерия",
+    "city": "Бишкек",
+    "phone": "",
+    "whatsapp": "",
+    "instagram": "",
+    "website": "",
+    "address": "Аалы Токомбаева улица, 53/1",
+    "rating": 4.9,
+    "reviewsCount": 317,
+    "latitude": 42.823465,
+    "longitude": 74.616233,
+    "sourceUrl": "https://2gis.kg/bishkek/firm/70000001036560101",
+    "status": "new",
+    "priority": "urgent",
+    "notes": "Импортировано через официальный 2GIS API.",
+    "lastContactDate": "",
+    "nextFollowUpDate": "",
+    "createdAt": "2026-05-14T22:01:04.560Z",
+    "updatedAt": "2026-05-14T22:01:04.564Z"
+  },
+  {
+    "id": "lead-1778796064559-d431dba209dd98",
+    "source": "2gis",
+    "externalId": "70000001023833162",
+    "companyName": "Prof shop, магазин",
+    "niche": "Профессиональная косметика",
+    "city": "Бишкек",
+    "phone": "",
+    "whatsapp": "",
+    "instagram": "",
+    "website": "",
+    "address": "проспект Чуй, 127",
+    "rating": 4.9,
+    "reviewsCount": 131,
+    "latitude": 42.875521,
+    "longitude": 74.622185,
+    "sourceUrl": "https://2gis.kg/bishkek/firm/70000001023833162",
+    "status": "new",
+    "priority": "urgent",
+    "notes": "Импортировано через официальный 2GIS API.",
+    "lastContactDate": "",
+    "nextFollowUpDate": "",
+    "createdAt": "2026-05-14T22:01:04.559Z",
+    "updatedAt": "2026-05-14T22:01:04.566Z"
+  },
+  {
+    "id": "lead-1778796064557-461c3ed0bf9ac8",
+    "source": "2gis",
+    "externalId": "70000001094742056",
+    "companyName": "Beauty showroom, магазин",
+    "niche": "Косметика и парфюмерия",
+    "city": "Бишкек",
+    "phone": "",
+    "whatsapp": "",
+    "instagram": "",
+    "website": "",
+    "address": "проспект Чынгыза Айтматова, 3",
+    "rating": 4.9,
+    "reviewsCount": 479,
+    "latitude": 42.856009,
+    "longitude": 74.584461,
+    "sourceUrl": "https://2gis.kg/bishkek/firm/70000001094742056",
+    "status": "new",
+    "priority": "urgent",
+    "notes": "Импортировано через официальный 2GIS API.",
+    "lastContactDate": "",
+    "nextFollowUpDate": "",
+    "createdAt": "2026-05-14T22:01:04.557Z",
+    "updatedAt": "2026-05-14T22:01:04.565Z"
+  },
+  {
     "id": "lead-1778795684214-6db1060da4e4a",
     "source": "2gis",
     "externalId": "70000001101712490",
@@ -221,7 +346,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.304Z",
-    "updatedAt": "2026-05-14T21:50:40.633Z",
+    "updatedAt": "2026-05-14T21:57:29.275Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001019352916"
   },
   {
@@ -246,7 +371,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.304Z",
-    "updatedAt": "2026-05-14T21:50:40.632Z",
+    "updatedAt": "2026-05-14T21:57:29.274Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001096899899"
   },
   {
@@ -271,7 +396,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.303Z",
-    "updatedAt": "2026-05-14T21:50:40.631Z",
+    "updatedAt": "2026-05-14T21:57:29.273Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001062131988"
   },
   {
@@ -296,7 +421,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.302Z",
-    "updatedAt": "2026-05-14T21:50:40.630Z",
+    "updatedAt": "2026-05-14T21:57:29.272Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001056819349"
   },
   {
@@ -321,7 +446,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.300Z",
-    "updatedAt": "2026-05-14T21:50:40.630Z",
+    "updatedAt": "2026-05-14T21:57:29.271Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001044336312"
   },
   {
@@ -346,7 +471,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.299Z",
-    "updatedAt": "2026-05-14T21:50:40.629Z",
+    "updatedAt": "2026-05-14T21:57:29.270Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001033489379"
   },
   {
@@ -371,7 +496,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.298Z",
-    "updatedAt": "2026-05-14T21:50:40.628Z",
+    "updatedAt": "2026-05-14T21:57:29.269Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001028675583"
   },
   {
@@ -396,7 +521,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.298Z",
-    "updatedAt": "2026-05-14T21:50:40.627Z",
+    "updatedAt": "2026-05-14T21:57:29.268Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001044107937"
   },
   {
@@ -421,7 +546,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.296Z",
-    "updatedAt": "2026-05-14T21:50:40.626Z",
+    "updatedAt": "2026-05-14T21:57:29.268Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001068434239"
   },
   {
@@ -446,7 +571,7 @@
     "lastContactDate": "",
     "nextFollowUpDate": "",
     "createdAt": "2026-05-14T21:40:55.294Z",
-    "updatedAt": "2026-05-14T21:50:40.624Z",
+    "updatedAt": "2026-05-14T21:57:29.266Z",
     "sourceUrl": "https://2gis.kg/bishkek/firm/70000001081256810"
   }
 ]

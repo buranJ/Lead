@@ -158,6 +158,7 @@ function renderLeadsTable() {
           <td>${escapeHtml(lead.city || "—")}</td>
           <td>${escapeHtml(lead.phone || lead.whatsapp || lead.instagram || "—")}</td>
           <td>${hasWebsite(lead) ? `<a href="${escapeAttr(lead.website)}" target="_blank" rel="noreferrer">Есть</a>` : `<span class="pill warning">Нет сайта</span>`}</td>
+          <td>${lead.sourceUrl ? `<a class="open-link" href="${escapeAttr(lead.sourceUrl)}" target="_blank" rel="noreferrer" data-stop-row>Открыть</a>` : "—"}</td>
           <td><span class="pill ${scoreClass}">${score}</span></td>
           <td><span class="pill">${statusLabel(lead.status)}</span></td>
         </tr>
@@ -195,7 +196,7 @@ function renderLeadDetail() {
           ${detailItem("WhatsApp", lead.whatsapp || "—")}
           ${detailItem("Instagram", lead.instagram || "—")}
           ${detailItem("Сайт", lead.website || "Нет сайта")}
-          ${detailItem("2GIS", lead.sourceUrl ? "Карточка доступна" : "—")}
+          ${detailItem("2GIS", lead.sourceUrl ? `<a href="${escapeAttr(lead.sourceUrl)}" target="_blank" rel="noreferrer">Открыть карточку</a>` : "—", true)}
           ${detailItem("Адрес", lead.address || "—")}
           ${detailItem("Рейтинг", lead.rating ? `${lead.rating} / ${lead.reviewsCount || 0} отзывов` : "—")}
         </div>
@@ -221,8 +222,8 @@ function renderLeadDetail() {
   `;
 }
 
-function detailItem(label, value) {
-  return `<div class="detail-item"><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`;
+function detailItem(label, value, allowHtml = false) {
+  return `<div class="detail-item"><span>${label}</span><strong>${allowHtml ? value : escapeHtml(value)}</strong></div>`;
 }
 
 function renderMessageSelect() {
@@ -344,6 +345,8 @@ function bindEvents() {
   });
 
   document.body.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-stop-row]")) return;
+
     const row = event.target.closest("[data-lead-id]");
     if (row) {
       selectedLeadId = row.dataset.leadId;
