@@ -15,6 +15,7 @@
 - CSV-импорт.
 - CSV-экспорт.
 - 2GIS integration endpoint.
+- Ссылка на реальную карточку компании в 2GIS для каждого 2GIS-лида.
 - AI message endpoint через OpenAI API или локальный fallback.
 
 ## Запуск
@@ -53,7 +54,7 @@ OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
-Если `TWO_GIS_API_KEY` не задан, endpoint 2GIS возвращает демо-лиды, чтобы приложение сразу работало.
+Если `TWO_GIS_API_KEY` не задан или у ключа нет доступа к Places API, endpoint 2GIS вернет ошибку. Моковые 2GIS-лиды не создаются.
 
 Если `OPENAI_API_KEY` не задан, генерация сообщений работает через локальный шаблон.
 

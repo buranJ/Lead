@@ -195,6 +195,7 @@ function renderLeadDetail() {
           ${detailItem("WhatsApp", lead.whatsapp || "—")}
           ${detailItem("Instagram", lead.instagram || "—")}
           ${detailItem("Сайт", lead.website || "Нет сайта")}
+          ${detailItem("2GIS", lead.sourceUrl ? "Карточка доступна" : "—")}
           ${detailItem("Адрес", lead.address || "—")}
           ${detailItem("Рейтинг", lead.rating ? `${lead.rating} / ${lead.reviewsCount || 0} отзывов` : "—")}
         </div>
@@ -212,6 +213,7 @@ function renderLeadDetail() {
           </select>
         </label>
         <button class="primary-button" id="detailGenerateButton">Сообщение WhatsApp</button>
+        ${lead.sourceUrl ? `<button class="secondary-button" id="detailOpen2GisButton">Открыть в 2GIS</button>` : ""}
         <button class="secondary-button" id="detailFollowUpButton">Создать follow-up</button>
         <button class="ghost-button" id="detailSaveButton">Сохранить изменения</button>
       </div>
@@ -379,6 +381,10 @@ function bindEvents() {
       document.querySelector("#generatedMessage").value = await generateMessage(lead.id, "WhatsApp");
     }
 
+    if (event.target.id === "detailOpen2GisButton" && lead.sourceUrl) {
+      window.open(lead.sourceUrl, "_blank", "noopener,noreferrer");
+    }
+
     if (event.target.id === "detailFollowUpButton") {
       const next = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
       await api(`/api/leads/${lead.id}`, {
@@ -418,32 +424,31 @@ function bindEvents() {
   document.querySelector("#twoGisForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const found = await api("/api/integrations/2gis/search-and-save", {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(formData.entries())),
-    });
-    alert(`Найдено и сохранено лидов: ${found.length}`);
-    await loadLeads();
-    document.querySelector('[data-view="clients"]').click();
-  });
-
-  document.querySelector("#sampleImportButton").addEventListener("click", async () => {
-    const found = await api("/api/integrations/2gis/search-and-save", {
-      method: "POST",
-      body: JSON.stringify({ city: "Бишкек", query: "стоматология" }),
-    });
-    alert(`Добавлено/обновлено лидов: ${found.length}`);
-    await loadLeads();
+    try {
+      const found = await api("/api/integrations/2gis/search-and-save", {
+        method: "POST",
+        body: JSON.stringify(Object.fromEntries(formData.entries())),
+      });
+      alert(`Найдено и сохранено лидов: ${found.length}`);
+      await loadLeads();
+      document.querySelector('[data-view="clients"]').click();
+    } catch (error) {
+      alert(`2GIS API не вернул лиды: ${error.message}`);
+    }
   });
 
   document.querySelector("#exportButton").addEventListener("click", exportCsv);
 
   document.querySelector("#resetSeedButton").addEventListener("click", async () => {
-    await api("/api/integrations/2gis/search-and-save", {
-      method: "POST",
-      body: JSON.stringify({ city: "Бишкек", query: "салон красоты" }),
-    });
-    await loadLeads();
+    try {
+      await api("/api/integrations/2gis/search-and-save", {
+        method: "POST",
+        body: JSON.stringify({ city: "Бишкек", query: "салон красоты" }),
+      });
+      await loadLeads();
+    } catch (error) {
+      alert(`Не удалось обновить лиды из 2GIS: ${error.message}`);
+    }
   });
 }
 

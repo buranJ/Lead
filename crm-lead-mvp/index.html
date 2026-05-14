@@ -37,7 +37,7 @@
             <h1 id="pageTitle">Dashboard</h1>
           </div>
           <div class="topbar-actions">
-            <button class="icon-button" id="resetSeedButton" title="Загрузить демо-данные">↻</button>
+            <button class="icon-button" id="resetSeedButton" title="Обновить лиды из 2GIS">↻</button>
             <button class="primary-button" id="exportButton">Экспорт CSV</button>
           </div>
         </header>
@@ -163,7 +163,7 @@
                 <button class="secondary-button full-width" type="submit">Найти и сохранить через backend</button>
               </form>
               <div class="legal-note">
-                Если `TWO_GIS_API_KEY` не задан, backend вернет демо-результаты. С ключом запрос идет в официальный 2GIS API.
+                Backend использует только реальный 2GIS API. Если `TWO_GIS_API_KEY` не задан или нет доступа к Places API, поиск вернет ошибку без моковых данных.
               </div>
             </section>
 
@@ -174,7 +174,6 @@
               <div class="import-box">
                 <p>Поддерживаются колонки: companyName, niche, city, phone, whatsapp, instagram, website, address, rating, reviewsCount, source.</p>
                 <input id="csvInput" type="file" accept=".csv,text/csv" />
-                <button class="secondary-button" id="sampleImportButton">Добавить примеры из 2GIS</button>
               </div>
               <div class="legal-note">
                 2GIS подключается через официальный API или разрешенную выгрузку. Instagram в MVP не скрейпится автоматически.

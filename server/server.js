@@ -224,6 +224,7 @@ function normalizeLead(input, now) {
     reviewsCount: toNullableNumber(input.reviewsCount),
     latitude: toNullableNumber(input.latitude),
     longitude: toNullableNumber(input.longitude),
+    sourceUrl: clean(input.sourceUrl),
     status: statuses.has(input.status) ? input.status : "new",
     priority: clean(input.priority) || "medium",
     notes: clean(input.notes),
@@ -261,6 +262,7 @@ function filterLeads(leads, params) {
 function enrichLead(lead) {
   return {
     ...lead,
+    sourceUrl: lead.sourceUrl || (lead.source === "2gis" ? buildTwoGisFirmUrl(lead.city, lead.externalId) : ""),
     hasWebsite: hasWebsite(lead),
     leadScore: leadScore(lead),
   };
@@ -270,7 +272,7 @@ async function searchTwoGis({ city = "", query = "", category = "", save = false
   const apiKey = env.TWO_GIS_API_KEY || process.env.TWO_GIS_API_KEY;
   const searchQuery = clean(query || category);
   if (!apiKey) {
-    return demoTwoGisLeads(city, searchQuery);
+    throw new Error("TWO_GIS_API_KEY is not set. Add a real 2GIS API key to .env and restart the server.");
   }
 
   const { items } = await runTwoGisSearchStrategies(city, searchQuery, apiKey, 10);
@@ -289,7 +291,6 @@ async function debugTwoGis({ city = "", query = "", category = "" }) {
     return {
       ok: false,
       reason: "TWO_GIS_API_KEY is not set on backend",
-      demoResults: demoTwoGisLeads(city, searchQuery).length,
     };
   }
 
@@ -441,9 +442,32 @@ function mapTwoGisItem(item, city, niche) {
     reviewsCount: item.reviews?.general_review_count || null,
     latitude: item.point?.lat ?? null,
     longitude: item.point?.lon ?? null,
+    sourceUrl: buildTwoGisFirmUrl(city, item.id),
     status: website ? "need_check" : "new",
     notes: "Импортировано через официальный 2GIS API.",
   };
+}
+
+function buildTwoGisFirmUrl(city, externalId) {
+  const id = clean(externalId);
+  if (!id) return "";
+  const citySlug = twoGisCitySlug(city);
+  if (citySlug) return `https://2gis.kg/${citySlug}/firm/${encodeURIComponent(id)}`;
+  return `https://2gis.com/firm/${encodeURIComponent(id)}`;
+}
+
+function twoGisCitySlug(city) {
+  const normalized = clean(city).toLowerCase();
+  return {
+    "бишкек": "bishkek",
+    "bishkek": "bishkek",
+    "ош": "osh",
+    "osh": "osh",
+    "алматы": "almaty",
+    "almaty": "almaty",
+    "астана": "astana",
+    "astana": "astana",
+  }[normalized] || "";
 }
 
 function extractTwoGisContacts(item) {
@@ -466,45 +490,6 @@ function extractWebsiteFromLinks(links = {}) {
   const values = Array.isArray(links) ? links : Object.values(links).flat();
   const found = values.find((value) => String(value?.url || value).includes("http"));
   return normalizeUrl(found?.url || found || "");
-}
-
-function demoTwoGisLeads(city, niche) {
-  const safeCity = city || "Бишкек";
-  const safeNiche = niche || "локальный бизнес";
-  return [
-    {
-      source: "2gis",
-      externalId: `demo-${safeCity}-${safeNiche}-1`,
-      companyName: `${capitalize(safeNiche)} Pro`,
-      niche: safeNiche,
-      city: safeCity,
-      phone: "+996 555 100 200",
-      whatsapp: "https://wa.me/996555100200",
-      instagram: "",
-      website: "",
-      address: "центр города",
-      rating: 4.6,
-      reviewsCount: 74,
-      status: "new",
-      notes: "Демо-результат. Добавьте TWO_GIS_API_KEY в .env для реального поиска.",
-    },
-    {
-      source: "2gis",
-      externalId: `demo-${safeCity}-${safeNiche}-2`,
-      companyName: `${capitalize(safeNiche)} Plus`,
-      niche: safeNiche,
-      city: safeCity,
-      phone: "+996 700 222 333",
-      whatsapp: "",
-      instagram: "@demo_business",
-      website: "https://example.com",
-      address: "деловой район",
-      rating: 4.3,
-      reviewsCount: 39,
-      status: "need_check",
-      notes: "Демо-результат. Добавьте TWO_GIS_API_KEY в .env для реального поиска.",
-    },
-  ];
 }
 
 async function generateAiMessage(lead, channel) {
@@ -592,7 +577,7 @@ function priorityByScore(score, fallback = "medium") {
 }
 
 function toCsv(leads) {
-  const headers = ["id", "source", "companyName", "niche", "city", "phone", "whatsapp", "instagram", "website", "address", "rating", "reviewsCount", "status", "priority", "leadScore", "notes", "createdAt", "updatedAt"];
+  const headers = ["id", "source", "sourceUrl", "companyName", "niche", "city", "phone", "whatsapp", "instagram", "website", "address", "rating", "reviewsCount", "status", "priority", "leadScore", "notes", "createdAt", "updatedAt"];
   return [headers.join(",")]
     .concat(leads.map((lead) => headers.map((key) => csvCell(lead[key] ?? "")).join(",")))
     .join("\n");
@@ -608,6 +593,8 @@ function hasWebsite(lead) {
 
 function isDuplicate(a, b) {
   const sameExternal = a.externalId && b.externalId && a.source === b.source && a.externalId === b.externalId;
+  if (a.externalId && b.externalId && a.source === b.source) return sameExternal;
+
   const samePhone = a.phone && b.phone && a.phone === b.phone;
   const sameInstagram = a.instagram && b.instagram && a.instagram.toLowerCase() === b.instagram.toLowerCase();
   const sameNameCity = a.companyName.toLowerCase() === b.companyName.toLowerCase() && clean(a.city).toLowerCase() === clean(b.city).toLowerCase();
@@ -633,11 +620,6 @@ function clean(value) {
 
 function uid() {
   return `lead-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function capitalize(value) {
-  const text = clean(value);
-  return text ? text[0].toUpperCase() + text.slice(1) : text;
 }
 
 async function readJson(req) {
