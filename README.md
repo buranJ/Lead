@@ -1,5 +1,63 @@
 # Lead CRM
 
+A working MVP CRM for finding potential clients for a web studio: lead CRUD, a dashboard with KPIs,
+and filters — including "has no website", which is the whole point of the tool.
+
+Node.js backend with **zero external dependencies** and a file-based JSON store. That is a
+deliberate constraint, not a shortcut: the goal was to build the API, routing, persistence and
+validation by hand rather than assemble them from packages.
+
+## Features
+
+- Lead CRUD over a small REST API
+- Dashboard with KPIs
+- Filters, including "no website"
+- 2GIS links surfaced on each lead
+- Frontend CRM served by, and talking to, the same backend
+
+## Architecture
+
+```text
+Browser (vanilla JS CRM)
+      │  fetch
+      ▼
+Node.js HTTP server        no framework, no dependencies
+      │
+      ▼
+server/data/leads.json     file-based store
+```
+
+**Known limitation:** the JSON store has no file locking, so it is safe for a single operator and
+not for concurrent writers. For an MVP whose purpose is one person's outbound pipeline, that is an
+accepted trade-off rather than an oversight.
+
+## Tech Stack
+
+Node.js (standard library only) · vanilla JavaScript · HTML · CSS
+
+## Getting Started
+
+```bash
+npm start     # starts the server
+npm run check
+```
+
+## Environment Variables
+
+See `.env.example` for the variable names.
+
+## Current Status
+
+Working MVP.
+
+Full documentation in Russian below.
+
+---
+
+## Документация (RU)
+
+# Lead CRM
+
 Рабочая MVP-версия CRM для поиска потенциальных клиентов веб-студии / frontend-разработчика.
 
 ## Что входит
